@@ -1,5 +1,5 @@
-const prisma = require('../utils/prisma');
-const Joi = require('joi');
+import { prisma } from '../db.js';
+import Joi from 'joi';
 
 const vehicleSchema = Joi.object({
   type: Joi.string().valid('BIKE', 'SCOOTER').required(),
@@ -7,23 +7,26 @@ const vehicleSchema = Joi.object({
   status: Joi.string().valid('AVAILABLE', 'IN_USE', 'MAINTENANCE')
 });
 
-exports.getAllVehicles = async (req, res) => {
-  try {
-    const vehicles = await prisma.vehicle.findMany();
-    res.json(vehicles);
-  } catch (error) {
-    res.status(500).json({ error: 'Помилка отримання даних' });
-  }
-};
+export async function getAllVehicles(req, res) {
+  const { page = 1, limit = 10, search, type } = req.query;
+  const skip = (Math.max(Number(page), 1) - 1) * Math.max(Number(limit), 1);
+  
+  const where = {};
+  if (search) where.model = { contains: search, mode: 'insensitive' };
+  if (type) where.type = type;
 
-exports.createVehicle = async (req, res) => {
-  try {
-    const { error, value } = vehicleSchema.validate(req.body);
-    if (error) return res.status(400).json({ error: error.details[0].message });
+  const [vehicles, total] = await Promise.all([
+    prisma.vehicle.findMany({ where, skip, take: Number(limit) }),
+    prisma.vehicle.count({ where })
+  ]);
 
-    const newVehicle = await prisma.vehicle.create({ data: value });
-    res.status(201).json(newVehicle);
-  } catch (error) {
-    res.status(500).json({ error: 'Помилка створення транспорту' });
-  }
-};
+  res.json({ data: vehicles, total, page: Number(page) });
+}
+
+export async function createVehicle(req, res) {
+  const { error, value } = vehicleSchema.validate(req.body);
+  if (error) return res.status(400).json({ error: error.details[0].message });
+
+  const newVehicle = await prisma.vehicle.create({ data: value });
+  res.status(201).json(newVehicle);
+}

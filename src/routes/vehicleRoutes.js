@@ -1,8 +1,11 @@
-const express = require('express');
-const router = express.Router();
-const vehicleController = require('../controllers/vehicleController');
+import { Router } from 'express';
+import { getAllVehicles, createVehicle } from '../controllers/vehicleController.js';
+import { authenticate } from '../middleware/auth.js';
+import { authorize } from '../middleware/authorize.js';
 
-router.get('/', vehicleController.getAllVehicles);
-router.post('/', vehicleController.createVehicle);
+const router = Router();
 
-module.exports = router;
+router.get('/', getAllVehicles);
+router.post('/', authenticate, authorize('ADMIN'), createVehicle);
+
+export default router;
