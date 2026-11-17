@@ -26,15 +26,19 @@ model User {
   refreshTokens RefreshToken[]
   bookings      Booking[]
   reviews       Review[]
+  notifications Notification[]
 }
 
 model Vehicle {
-  id       Int           @id @default(autoincrement())
+  id       Int       @id @default(autoincrement())
   type     String
   model    String
-  status   String        @default("AVAILABLE")
+  status   String    @default("AVAILABLE")
   bookings Booking[]
   reviews  Review[]
+
+  // ОПТИМІЗАЦІЯ: Індекс для швидкого пошуку та фільтрації транспорту
+  @@index([type, status])
 }
 
 model Booking {
@@ -46,6 +50,10 @@ model Booking {
   startTime DateTime  @default(now())
   endTime   DateTime?
   status    String    @default("ACTIVE")
+
+  // ОПТИМІЗАЦІЯ: Індекси для пришвидшення запитів по користувачу та транспорту
+  @@index([userId])
+  @@index([vehicleId])
 }
 
 model Review {
@@ -56,6 +64,8 @@ model Review {
   userId    Int
   vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
   vehicleId Int
+
+  @@index([vehicleId])
 }
 
 model File {
@@ -81,4 +91,16 @@ model RefreshToken {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// НОВА ТАБЛИЦЯ ДЛЯ 3-Ї ЛАБИ: Сповіщення в реальному часі
+model Notification {
+  id        Int      @id @default(autoincrement())
+  message   String
+  isRead    Boolean  @default(false)
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
 }

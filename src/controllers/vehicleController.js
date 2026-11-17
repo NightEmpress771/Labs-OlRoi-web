@@ -28,5 +28,9 @@ export async function createVehicle(req, res) {
   if (error) return res.status(400).json({ error: error.details[0].message });
 
   const newVehicle = await prisma.vehicle.create({ data: value });
+  
+  // РЕАЛЬНИЙ ЧАС: Надсилаємо подію всім клієнтам (broadcast)
+  req.app.get('io').emit('vehicle:created', newVehicle);
+  
   res.status(201).json(newVehicle);
 }
