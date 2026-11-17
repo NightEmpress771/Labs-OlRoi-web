@@ -13,4 +13,16 @@ export function authenticate(req, res, next) {
   } catch {
     res.status(401).json({ error: 'Недійсний або прострочений токен' });
   }
+
+  
 }
+
+export const authorize = (role) => {
+  return (req, res, next) => {
+    // req.user додається попереднім мідлваром authenticate
+    if (!req.user || req.user.role !== role) {
+      return res.status(403).json({ error: `Доступ заборонено. Необхідна роль: ${role}` });
+    }
+    next();
+  };
+};

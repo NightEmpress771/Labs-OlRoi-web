@@ -8,6 +8,7 @@ import authRoutes from './routes/authRoutes.js';
 import fileRoutes from './routes/fileRoutes.js';
 import vehicleRoutes from './routes/vehicleRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/users', userRoutes);
 
 // Глобальний обробник помилок (включаючи помилки Multer)
 app.use((err, req, res, next) => {
