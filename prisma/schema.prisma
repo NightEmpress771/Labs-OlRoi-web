@@ -19,6 +19,7 @@ model User {
   password      String
   name          String
   role          Role           @default(USER)
+  balance       Float          @default(100)
   avatar        String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -30,28 +31,31 @@ model User {
 }
 
 model Vehicle {
-  id       Int       @id @default(autoincrement())
-  type     String
-  model    String
-  status   String    @default("AVAILABLE")
-  bookings Booking[]
-  reviews  Review[]
+  id           Int       @id @default(autoincrement())
+  type         String    // 'BIKE' або 'SCOOTER'
+  model        String
+  description  String?
+  pricePerHour Float     @default(50)
+  imageUrl     String?
+  status       String    @default("AVAILABLE") // 'AVAILABLE', 'IN_USE', 'MAINTENANCE'
+  bookings     Booking[]
+  reviews      Review[]
 
-  // ОПТИМІЗАЦІЯ: Індекс для швидкого пошуку та фільтрації транспорту
   @@index([type, status])
 }
 
 model Booking {
-  id        Int       @id @default(autoincrement())
-  user      User      @relation(fields: [userId], references: [id])
-  userId    Int
-  vehicle   Vehicle   @relation(fields: [vehicleId], references: [id])
-  vehicleId Int
-  startTime DateTime  @default(now())
-  endTime   DateTime?
-  status    String    @default("ACTIVE")
+  id         Int       @id @default(autoincrement())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  vehicle    Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  vehicleId  Int
+  hours      Int       @default(1)
+  totalPrice Float     @default(0)
+  startTime  DateTime  @default(now())
+  endTime    DateTime?
+  status     String    @default("ACTIVE") // 'ACTIVE', 'COMPLETED', 'CANCELLED'
 
-  // ОПТИМІЗАЦІЯ: Індекси для пришвидшення запитів по користувачу та транспорту
   @@index([userId])
   @@index([vehicleId])
 }

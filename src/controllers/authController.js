@@ -37,14 +37,13 @@ export async function register(req, res) {
   }
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
-
   if (existingUser) {
     return res.status(409).json({ error: 'Користувач з таким email вже існує' });
   }
 
   const user = await prisma.user.create({
     data: { email, password: await hashPassword(password), name },
-    select: { id: true, email: true, name: true, role: true, createdAt: true },
+    select: { id: true, email: true, name: true, role: true, balance: true, createdAt: true },
   });
 
   res.status(201).json({
@@ -62,7 +61,6 @@ export async function login(req, res) {
   }
 
   const user = await prisma.user.findUnique({ where: { email } });
-
   if (!user || !(await comparePassword(password, user.password))) {
     return res.status(401).json({ error: 'Невірний email або пароль' });
   }
@@ -76,9 +74,36 @@ export async function login(req, res) {
   });
 }
 
+export async function getMe(req, res) {
+  const user = await prisma.user.findUnique({
+    where: { id: req.user.userId },
+    select: { id: true, email: true, name: true, role: true, balance: true, createdAt: true },
+  });
+  if (!user) return res.status(404).json({ error: 'Користувача не знайдено' });
+  res.json({ user });
+}
+
+export async function topUpBalance(req, res) {
+  const amount = Number(req.body?.amount);
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 100000) {
+    return res.status(400).json({ error: 'Вкажіть коректну суму поповнення (від 1 до 100 000 грн)' });
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: req.user.userId },
+    data: { balance: { increment: amount } },
+    select: { id: true, email: true, name: true, role: true, balance: true, createdAt: true },
+  });
+
+  res.json({
+    message: 'Баланс успішно поповнено',
+    balance: updatedUser.balance,
+    user: updatedUser,
+  });
+}
+
 export async function refresh(req, res) {
   const { refreshToken } = req.body ?? {};
-
   if (!refreshToken) {
     return res.status(400).json({ error: 'Refresh токен відсутній' });
   }
@@ -114,13 +139,11 @@ export async function refresh(req, res) {
 
 export async function logout(req, res) {
   const { refreshToken } = req.body ?? {};
-
   if (refreshToken) {
     await prisma.refreshToken.updateMany({
       where: { tokenHash: sha256(refreshToken), revokedAt: null },
       data: { revokedAt: new Date() },
     });
   }
-
   res.status(204).end();
 }

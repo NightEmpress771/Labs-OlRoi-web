@@ -1,5 +1,13 @@
 import { Router } from 'express';
-import { register, login, refresh, logout } from '../controllers/authController.js';
+import {
+  register,
+  login,
+  getMe,
+  topUpBalance,
+  refresh,
+  logout,
+} from '../controllers/authController.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -48,6 +56,9 @@ router.post('/register', register);
  *       401: { description: Невірні дані для входу }
  */
 router.post('/login', login);
+
+router.get('/me', authenticate, getMe);
+router.post('/balance/topup', authenticate, topUpBalance);
 
 /**
  * @swagger
